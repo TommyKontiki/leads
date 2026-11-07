@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Leads – tableau copiable</title>
+<style>
+:root{--bg:#f6f7f8;--surface:#fff;--text:#1b2328;--muted:#66727a;--line:#dfe4e7;--accent:#0f766e;--accent-soft:#d5f0ec;--head:#eef1f3;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12181b;--surface:#1a2226;--text:#e6ecef;--muted:#93a1a9;--line:#2c373d;--accent:#4fd1c3;--accent-soft:#1c4a45;--head:#222d32;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#12181b;--surface:#1a2226;--text:#e6ecef;--muted:#93a1a9;--line:#2c373d;--accent:#4fd1c3;--accent-soft:#1c4a45;--head:#222d32;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:20px 16px 40px}
+main{max-width:1100px;margin:0 auto}
+h1{font-size:1.4rem;margin:0 0 4px;letter-spacing:-.01em}
+.sub{margin:0 0 16px;color:var(--muted)}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:12px}
+input[type=search],select{font:inherit;color:var(--text);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:8px 10px}
+input[type=search]{width:min(320px,100%)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.wrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;min-width:760px}
+th,td{text-align:left;padding:0;border-bottom:1px solid var(--line);white-space:nowrap}
+th{background:var(--head);font-weight:600}
+th button{all:unset;box-sizing:border-box;display:block;width:100%;padding:10px 14px;cursor:pointer}
+th button:hover{color:var(--accent)}
+th button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+th .arr{color:var(--accent);margin-left:4px}
+td{padding:9px 14px;cursor:copy;position:relative;transition:background .15s}
+td:hover{background:var(--accent-soft)}
+td:focus-visible{outline-offset:-2px}
+td.ok{background:var(--accent);color:var(--surface)}
+tr:last-child td{border-bottom:0}
+.foot{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-top:12px;color:var(--muted)}
+.pager{display:flex;gap:6px;align-items:center}
+.pager button{font:inherit;color:var(--text);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 12px;cursor:pointer}
+.pager button:disabled{opacity:.4;cursor:default}
+.empty{padding:28px;text-align:center;color:var(--muted)}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:var(--text);color:var(--bg);padding:8px 16px;border-radius:6px;opacity:0;pointer-events:none;transition:.2s;max-width:90vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+  <h1>Leads</h1>
+  <p class="sub">Cliquez sur une cellule (ou Entrée au clavier) pour copier sa valeur. Données fictives.</p>
+  <div class="bar">
+    <input type="search" id="q" placeholder="Rechercher un lead…" aria-label="Rechercher">
+    <label>Lignes par page
+      <select id="size"><option>10</option><option selected>15</option><option>25</option><option>50</option><option>100</option></select>
+    </label>
+  </div>
+  <div class="wrap"><table>
+    <thead><tr id="head"></tr></thead>
+    <tbody id="body"></tbody>
+  </table></div>
+  <div class="foot"><span id="info"></span>
+    <div class="pager"><button id="prev">Précédent</button><span id="pg"></span><button id="next">Suivant</button></div>
+  </div>
+</main>
+<div id="toast" role="status" aria-live="polite"></div>
+<script>
+const COLS=[["nom","Nom"],["prenom","Prénom"],["email","Email"],["tel","Téléphone"],["sexe","Sexe"],["naissance","Date de naissance"],["cp","Code postal"]];
+// Génération de 100 leads fictifs (graine fixe : mêmes données à chaque chargement)
+let seed=20261107;const rnd=()=>(seed=(seed*1664525+1013904223)>>>0)/4294967296;
+const pick=a=>a[Math.floor(rnd()*a.length)];
+const noms=["Martin","Bernard","Dubois","Thomas","Robert","Richard","Petit","Durand","Leroy","Moreau","Simon","Laurent","Lefebvre","Michel","Garcia","David","Bertrand","Roux","Vincent","Fournier","Morel","Girard","André","Mercier","Dupont","Lambert","Bonnet","François","Martinez","Legrand","Garnier","Faure","Rousseau","Blanc","Guerin","Muller","Henry","Roussel","Nicolas","Perrin"];
+const hommes=["Lucas","Hugo","Louis","Nathan","Léo","Gabriel","Arthur","Jules","Adam","Raphaël","Paul","Antoine","Thomas","Maxime","Théo","Julien","Mathieu","Nicolas"];
+const femmes=["Emma","Léa","Chloé","Manon","Inès","Camille","Sarah","Jade","Louise","Alice","Juliette","Clara","Lola","Zoé","Marie","Julie","Pauline","Élodie"];
+const doms=["example.fr","example.com","mail-test.fr","demo-lead.com"];
+const norm=s=>s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z]/g,"");
+const p2=n=>String(n).padStart(2,"0");
+const DATA=Array.from({length:100},()=>{
+  const f=rnd()<.5,prenom=pick(f?femmes:hommes),nom=pick(noms);
+  const y=1950+Math.floor(rnd()*56),m=1+Math.floor(rnd()*12),d=1+Math.floor(rnd()*28);
+  const dep=pick(["01","13","31","33","34","35","44","59","67","69","75","76","92","93","94"]);
+  return{nom,prenom,
+    email:`${norm(prenom)}.${norm(nom)}${Math.floor(rnd()*90+10)}@${pick(doms)}`,
+    tel:`0${pick([6,7])} ${p2(Math.floor(rnd()*100))} ${p2(Math.floor(rnd()*100))} ${p2(Math.floor(rnd()*100))} ${p2(Math.floor(rnd()*100))}`,
+    sexe:f?"F":"M",naissance:`${p2(d)}/${p2(m)}/${y}`,cp:dep+String(Math.floor(rnd()*1000)).padStart(3,"0")};
+});
+const sortKey=(r,k)=>k==="naissance"?r[k].split("/").reverse().join(""):r[k].toLowerCase();
+let state={q:"",col:null,dir:1,page:1,size:15};
+const $=id=>document.getElementById(id);
+function view(){
+  const q=state.q.trim().toLowerCase();
+  let rows=q?DATA.filter(r=>Object.values(r).some(v=>v.toLowerCase().includes(q))):DATA.slice();
+  if(state.col)rows.sort((a,b)=>sortKey(a,state.col)<sortKey(b,state.col)?-state.dir:sortKey(a,state.col)>sortKey(b,state.col)?state.dir:0);
+  return rows;
+}
+function render(){
+  const rows=view(),pages=Math.max(1,Math.ceil(rows.length/state.size));
+  state.page=Math.min(state.page,pages);
+  const start=(state.page-1)*state.size,slice=rows.slice(start,start+state.size);
+  $("head").innerHTML=COLS.map(([k,l])=>`<th scope="col" aria-sort="${state.col===k?(state.dir>0?"ascending":"descending"):"none"}"><button data-k="${k}">${l}<span class="arr">${state.col===k?(state.dir>0?"▲":"▼"):""}</span></button></th>`).join("");
+  $("body").innerHTML=slice.length?slice.map(r=>"<tr>"+COLS.map(([k])=>`<td tabindex="0" title="Cliquer pour copier">${r[k]}</td>`).join("")+"</tr>").join(""):`<tr><td class="empty" colspan="7" style="cursor:default">Aucun lead ne correspond à votre recherche.</td></tr>`;
+  $("info").textContent=rows.length?`${start+1}–${start+slice.length} sur ${rows.length} leads`:"0 lead";
+  $("pg").textContent=`Page ${state.page} / ${pages}`;
+  $("prev").disabled=state.page<=1;$("next").disabled=state.page>=pages;
+}
+let tt;
+function toast(t){const e=$("toast");e.textContent=t;e.classList.add("on");clearTimeout(tt);tt=setTimeout(()=>e.classList.remove("on"),1400)}
+async function copy(text){
+  try{await navigator.clipboard.writeText(text);return true}catch(e){}
+  try{const a=document.createElement("textarea");a.value=text;a.style.cssText="position:fixed;opacity:0";document.body.appendChild(a);a.select();const ok=document.execCommand("copy");a.remove();return ok}catch(e){return false}
+}
+async function doCopy(td){
+  if(td.classList.contains("empty"))return;
+  const v=td.textContent.trim(),ok=await copy(v);
+  toast(ok?`Copié : ${v}`:"Copie impossible : sélectionnez le texte manuellement");
+  if(ok){td.classList.add("ok");setTimeout(()=>td.classList.remove("ok"),400)}
+}
+$("body").addEventListener("click",e=>{const td=e.target.closest("td");if(td)doCopy(td)});
+$("body").addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&e.target.matches("td")){e.preventDefault();doCopy(e.target)}});
+$("head").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;const k=b.dataset.k;
+  if(state.col===k)state.dir*=-1;else{state.col=k;state.dir=1}render()});
+$("q").addEventListener("input",e=>{state.q=e.target.value;state.page=1;render()});
+$("size").addEventListener("change",e=>{state.size=+e.target.value;state.page=1;render()});
+$("prev").onclick=()=>{state.page--;render()};
+$("next").onclick=()=>{state.page++;render()};
+render();
+</script>
+</body>
+</html>
