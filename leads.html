@@ -20,7 +20,7 @@ input[type=search],select{font:inherit;color:var(--text);background:var(--surfac
 input[type=search]{width:min(320px,100%)}
 :focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .wrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:8px}
-table{border-collapse:collapse;width:100%;min-width:760px}
+table{border-collapse:collapse;width:100%;min-width:980px}
 th,td{text-align:left;padding:0;border-bottom:1px solid var(--line);white-space:nowrap}
 th{background:var(--head);font-weight:600}
 th button{all:unset;box-sizing:border-box;display:block;width:100%;padding:10px 14px;cursor:pointer}
@@ -62,7 +62,7 @@ tr:last-child td{border-bottom:0}
 </main>
 <div id="toast" role="status" aria-live="polite"></div>
 <script>
-const COLS=[["nom","Nom"],["prenom","Prénom"],["email","Email"],["tel","Téléphone"],["sexe","Sexe"],["naissance","Date de naissance"],["cp","Code postal"]];
+const COLS=[["nom","Nom"],["prenom","Prénom"],["email","Email"],["tel","Téléphone"],["sexe","Sexe"],["naissance","Date de naissance"],["adresse","Adresse"],["cp","Code postal"]];
 // Génération de 100 leads fictifs (graine fixe : mêmes données à chaque chargement)
 let seed=20261107;const rnd=()=>(seed=(seed*1664525+1013904223)>>>0)/4294967296;
 const pick=a=>a[Math.floor(rnd()*a.length)];
@@ -81,6 +81,12 @@ const DATA=Array.from({length:100},()=>{
     tel:`0${pick([6,7])} ${p2(Math.floor(rnd()*100))} ${p2(Math.floor(rnd()*100))} ${p2(Math.floor(rnd()*100))} ${p2(Math.floor(rnd()*100))}`,
     sexe:f?"F":"M",naissance:`${p2(d)}/${p2(m)}/${y}`,cp:dep+String(Math.floor(rnd()*1000)).padStart(3,"0")};
 });
+// Adresses fictives (second générateur : les autres données restent identiques)
+let seed2=7654321;const rnd2=()=>(seed2=(seed2*1664525+1013904223)>>>0)/4294967296;
+const pick2=a=>a[Math.floor(rnd2()*a.length)];
+const villes={"01":"Bourg-en-Bresse","13":"Marseille","31":"Toulouse","33":"Bordeaux","34":"Montpellier","35":"Rennes","44":"Nantes","59":"Lille","67":"Strasbourg","69":"Lyon","75":"Paris","76":"Rouen","92":"Nanterre","93":"Bobigny","94":"Créteil"};
+const voies=["rue de la République","avenue Victor Hugo","rue des Lilas","boulevard Gambetta","rue Pasteur","avenue de la Gare","rue du Moulin","impasse des Tilleuls","rue Jean Jaurès","place de la Mairie","rue des Écoles","chemin des Vignes","avenue du Général de Gaulle","rue de l'Église","allée des Peupliers","rue Voltaire"];
+DATA.forEach(r=>{r.adresse=`${1+Math.floor(rnd2()*120)} ${pick2(voies)}, ${villes[r.cp.slice(0,2)]}`});
 const sortKey=(r,k)=>k==="naissance"?r[k].split("/").reverse().join(""):r[k].toLowerCase();
 let state={q:"",col:null,dir:1,page:1,size:15};
 const $=id=>document.getElementById(id);
@@ -95,7 +101,7 @@ function render(){
   state.page=Math.min(state.page,pages);
   const start=(state.page-1)*state.size,slice=rows.slice(start,start+state.size);
   $("head").innerHTML=COLS.map(([k,l])=>`<th scope="col" aria-sort="${state.col===k?(state.dir>0?"ascending":"descending"):"none"}"><button data-k="${k}">${l}<span class="arr">${state.col===k?(state.dir>0?"▲":"▼"):""}</span></button></th>`).join("");
-  $("body").innerHTML=slice.length?slice.map(r=>"<tr>"+COLS.map(([k])=>`<td tabindex="0" title="Cliquer pour copier">${r[k]}</td>`).join("")+"</tr>").join(""):`<tr><td class="empty" colspan="7" style="cursor:default">Aucun lead ne correspond à votre recherche.</td></tr>`;
+  $("body").innerHTML=slice.length?slice.map(r=>"<tr>"+COLS.map(([k])=>`<td tabindex="0" title="Cliquer pour copier">${r[k]}</td>`).join("")+"</tr>").join(""):`<tr><td class="empty" colspan="8" style="cursor:default">Aucun lead ne correspond à votre recherche.</td></tr>`;
   $("info").textContent=rows.length?`${start+1}–${start+slice.length} sur ${rows.length} leads`:"0 lead";
   $("pg").textContent=`Page ${state.page} / ${pages}`;
   $("prev").disabled=state.page<=1;$("next").disabled=state.page>=pages;
